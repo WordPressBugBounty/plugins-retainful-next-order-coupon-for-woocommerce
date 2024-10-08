@@ -3,7 +3,7 @@
         'name' => 'retainful/woocommerce',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '90aed77659773d4e39064f448f8ef9bd1fb6e046',
+        'reference' => '21a38b5f05a6679f7cd5f4ebbd4ed1fbfa266dfe',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'retainful/woocommerce' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '90aed77659773d4e39064f448f8ef9bd1fb6e046',
+            'reference' => '21a38b5f05a6679f7cd5f4ebbd4ed1fbfa266dfe',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
