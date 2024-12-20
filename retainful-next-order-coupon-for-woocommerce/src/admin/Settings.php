@@ -893,6 +893,9 @@ class Settings
             'order.created' => false
         ];
         try {
+            if(!class_exists('WC_Data_Store')){
+                return $topics;
+            }
             $data_store = \WC_Data_Store::load('webhook');
             $args = array(
                 'limit' => -1,
@@ -937,6 +940,9 @@ class Settings
             return false;
         }
         try {
+            if(!class_exists('WC_Webhook')){
+                return false;
+            }
             $webhook = new \WC_Webhook();
             $name = $topic == 'order.updated' ? sanitize_text_field(wp_unslash('Retainful Order Update')) : sanitize_text_field(wp_unslash('Retainful Order Create'));
             $webhook->set_name($name);
@@ -1465,17 +1471,6 @@ class Settings
     {
         $settings = $this->getAdminSettings();
         return (isset($settings[RNOC_PLUGIN_PREFIX . 'cart_tracking_engine']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'cart_tracking_engine'])) ? $settings[RNOC_PLUGIN_PREFIX . 'cart_tracking_engine'] : 'js';
-    }
-
-    /**
-     * is referral widget is required for store
-     * @return mixed|void
-     */
-    function needReferralWidget()
-    {
-        $settings = $this->getAdminSettings();
-        $need_widget = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_referral_widget']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'enable_referral_widget'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_referral_widget'] : 'no';
-        return apply_filters("retainful_enable_referral_program", ($need_widget === "yes"));
     }
 
     function needPopupWidget()
@@ -2364,7 +2359,7 @@ class Settings
      */
     function isCustomerPage()
     {
-        if (is_ajax()) {
+        if (function_exists( 'is_ajax' ) && is_ajax()) {
             return true;
         }
         return !is_admin();

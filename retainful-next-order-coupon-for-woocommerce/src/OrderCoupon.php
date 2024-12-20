@@ -26,12 +26,12 @@ class OrderCoupon
         if ($this->admin->runAbandonedCartExternally()) {
             $action_links = array(
                 'license' => '<a href="' . admin_url('admin.php?page=retainful_license') . '">' . __('Connection', RNOC_TEXT_DOMAIN) . '</a>',
-                'premium_add_ons' => '<a href="' . admin_url('admin.php?page=retainful_premium') . '">' . __('Add-ons', RNOC_TEXT_DOMAIN) . '</a>',
+                //'premium_add_ons' => '<a href="' . admin_url('admin.php?page=retainful_premium') . '">' . __('Add-ons', RNOC_TEXT_DOMAIN) . '</a>',
             );
         } else {
             $action_links = array(
                 'abandoned_carts' => '<a href="' . admin_url('admin.php?page=retainful_abandoned_cart') . '">' . __('Abandoned carts', RNOC_TEXT_DOMAIN) . '</a>',
-                'premium_add_ons' => '<a href="' . admin_url('admin.php?page=retainful_premium') . '">' . __('Add-ons', RNOC_TEXT_DOMAIN) . '</a>',
+                //'premium_add_ons' => '<a href="' . admin_url('admin.php?page=retainful_premium') . '">' . __('Add-ons', RNOC_TEXT_DOMAIN) . '</a>',
                 'settings' => '<a href="' . admin_url('admin.php?page=retainful_settings') . '">' . __('Settings', RNOC_TEXT_DOMAIN) . '</a>',
                 'license' => '<a href="' . admin_url('admin.php?page=retainful_license') . '">' . __('License', RNOC_TEXT_DOMAIN) . '</a>',
             );
@@ -742,6 +742,10 @@ class OrderCoupon
      */
     function createNewCoupon($order_id, $data)
     {
+        if(get_option('retainful_hide_next_order_coupon', 'no') == 'yes') {
+            return false;
+        }
+
         if (!$this->admin->isNextOrderCouponEnabled()) {
             return false;
         }
