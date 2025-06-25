@@ -22,6 +22,7 @@ class RestApi
     protected $order_note_key = "rnoc_order_note", $order_note_key_for_db = "_rnoc_order_note";
     protected $order_recovered_key = "rnoc_order_recovered", $order_recovered_key_for_db = "_rnoc_order_recovered";
     protected $accepts_marketing_key_for_db = "_rnoc_is_buyer_accepts_marketing";
+	protected $accepts_sms_marketing_key_for_db = "_rnoc_is_buyer_accepts_sms_marketing";
     protected $previous_cart_hash_key = "rnoc_previous_cart_hash";
     protected $cart_hash_key_for_db = "_rnoc_cart_hash";
     /** The cipher method name to use to encrypt the cart data */
@@ -348,26 +349,28 @@ class RestApi
      */
     function getClientIp()
     {
-        if (isset($_SERVER['HTTP_X_REAL_IP'])) {
-            $client_ip = $_SERVER['HTTP_X_REAL_IP'];
-        } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
-            $client_ip = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED'])) {
-            $client_ip = $_SERVER['HTTP_X_FORWARDED'];
-        } elseif (isset($_SERVER['HTTP_FORWARDED_FOR'])) {
-            $client_ip = $_SERVER['HTTP_FORWARDED_FOR'];
-        } elseif (isset($_SERVER['HTTP_FORWARDED'])) {
-            $client_ip = $_SERVER['HTTP_FORWARDED'];
-        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
-            $client_ip = $_SERVER['REMOTE_ADDR'];
-        } else {
-            $client_ip = '';
-        }
 
-        return $client_ip;
-    }
+	    $ip_headers = [
+		    'HTTP_X_REAL_IP',
+		    'HTTP_CLIENT_IP',
+		    'HTTP_X_FORWARDED_FOR',
+		    'HTTP_X_FORWARDED',
+		    'HTTP_FORWARDED_FOR',
+		    'HTTP_FORWARDED',
+		    'REMOTE_ADDR'
+	    ];
+	    $client_ip = '';
+	    foreach ($ip_headers as $header) {
+		    if ( ! empty( $_SERVER[ $header ] ) ) {
+			    $ip = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				if(!empty($ip)) {
+					$client_ip = $ip;
+					break;
+				}
+		    }
+	    }
+		return $client_ip;
+	}
 
     /**
      * retrieve User IP address
@@ -418,18 +421,18 @@ class RestApi
             // fall back to mt_rand if random_bytes is unavailable
             $token = sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 // 32 bits for "time_low"
-                mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+	            wp_rand(0, 0xffff), wp_rand(0, 0xffff),
                 // 16 bits for "time_mid"
-                mt_rand(0, 0xffff),
+	            wp_rand(0, 0xffff),
                 // 16 bits for "time_hi_and_version",
                 // four most significant bits holds version number 4
-                mt_rand(0, 0x0fff) | 0x4000,
+	            wp_rand(0, 0x0fff) | 0x4000,
                 // 16 bits, 8 bits for "clk_seq_hi_res",
                 // 8 bits for "clk_seq_low",
                 // two most significant bits holds zero and one for variant DCE1.1
-                mt_rand(0, 0x3fff) | 0x8000,
+	            wp_rand(0, 0x3fff) | 0x8000,
                 // 48 bits for "node"
-                mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+	            wp_rand(0, 0xffff), wp_rand(0, 0xffff), wp_rand(0, 0xffff)
             );
         }
 
@@ -526,7 +529,7 @@ class RestApi
         if (self::$woocommerce->getOrderMeta($order, '_rnoc_recovered_by', 0) == 1) {
             self::$woocommerce->deleteOrderMeta($order_id, $this->pending_recovery_key_for_db);
             self::$woocommerce->setOrderMeta($order_id, $this->order_recovered_key_for_db, true);
-            self::$woocommerce->setOrderNote($order, __('Order recovered by Retainful.', RNOC_TEXT_DOMAIN));
+            self::$woocommerce->setOrderNote($order, __('Order recovered by Retainful.', 'retainful-next-order-coupon-for-woocommerce'));
             do_action('rnoc_abandoned_order_recovered', $order);
         }
     }
@@ -611,7 +614,7 @@ class RestApi
         }
 
         try {
-            $date = date('Y-m-d H:i:s', $timestamp);
+            $date = gmdate('Y-m-d H:i:s', $timestamp);
             $date_time = new DateTime($date);
 
             return $date_time->format(DateTime::ATOM);
@@ -807,6 +810,33 @@ class RestApi
         return false;*/
     }
 
+
+	/**
+	 * Check is buyer accepts marketing
+	 * @return bool
+	 */
+	function isSmsConsent()
+	{
+
+		$settings = self::$settings->getAdminSettings();
+		$enable_gdpr_compliance = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'] : 0;
+		if ($enable_gdpr_compliance) {
+			return in_array(self::$woocommerce->getSession('is_buyer_accepting_sms_marketing'), array(1, 'true'));
+		}
+
+		return true;
+		/*if (is_user_logged_in()) {
+			return true;
+		} else {
+			$is_buyer_accepts_marketing = self::$woocommerce->getSession('is_buyer_accepting_marketing');
+			if ($is_buyer_accepts_marketing == 1) {
+				return true;
+			}
+		}
+		return false;*/
+	}
+
+
     /**
      * need to track carts or not
      *
@@ -852,12 +882,8 @@ class RestApi
         if (!empty($order)) {
             return self::$woocommerce->getOrderMeta($order, '_rnoc_get_http_user_agent');
         } else {
-            if (isset($_SERVER['HTTP_USER_AGENT']) && !empty($_SERVER['HTTP_USER_AGENT'])) {
-                return $_SERVER['HTTP_USER_AGENT'];
-            }
+			return isset($_SERVER['HTTP_USER_AGENT']) && !empty($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
         }
-
-        return '';
     }
 
     /**
@@ -872,9 +898,8 @@ class RestApi
         if (!empty($order)) {
             return self::$woocommerce->getOrderMeta($order, '_rnoc_get_http_accept_language');
         } else {
-            if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-                $lang = trim($_SERVER['HTTP_ACCEPT_LANGUAGE']);
-
+	        $lang = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) && !empty($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT_LANGUAGE']))) : '';
+	        if ($lang ) {
                 return substr($lang, 0, 2);
             }
         }

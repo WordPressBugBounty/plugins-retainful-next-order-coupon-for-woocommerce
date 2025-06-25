@@ -175,7 +175,7 @@ class Order extends RestApi
                 if ($is_order_recovered == false && self::$woocommerce->getOrderMeta($order, '_rnoc_recovered_by') == 1) {
                     $order->delete_meta_data($this->pending_recovery_key_for_db);
                     $order->update_meta_data($this->order_recovered_key_for_db, true);
-                    $order->add_order_note(__('Order recovered by Retainful.', RNOC_TEXT_DOMAIN));
+                    $order->add_order_note(__('Order recovered by Retainful.', 'retainful-next-order-coupon-for-woocommerce'));
                     do_action('rnoc_abandoned_order_recovered', $order);
                 }
             }
@@ -230,7 +230,8 @@ class Order extends RestApi
             $cart_hash = $order->get_cart_hash();
         }
         $is_buyer_accepts_marketing = self::$woocommerce->getOrderMeta($order, $this->accepts_marketing_key_for_db);
-        $customer_details = $this->getCustomerDetails($order);
+	    $is_buyer_accepts_sms_marketing = self::$woocommerce->getOrderMeta($order, $this->accepts_sms_marketing_key_for_db);
+	    $customer_details = $this->getCustomerDetails($order);
         $current_currency_code = self::$woocommerce->getOrderCurrency($order);
         $default_currency_code = self::$settings->getBaseCurrency();
         $cart_created_at = self::$woocommerce->getOrderMeta($order, $this->cart_tracking_started_key_for_db);
@@ -279,6 +280,7 @@ class Order extends RestApi
             'abandoned_checkout_url' => $this->getRecoveryLink($cart_token),
             'total_line_items_price' => $this->formatDecimalPrice($this->getOrderItemsTotal($order)),
             'buyer_accepts_marketing' => ($is_buyer_accepts_marketing == 1),
+            'buyer_accepts_sms_marketing' => ($is_buyer_accepts_sms_marketing == 1),
             'cancelled_at' => self::$woocommerce->getOrderMeta($order, $this->order_cancelled_date_key_for_db),
             'woocommerce_totals' => $this->getOrderTotals($order, $excluding_tax),
             'recovered_by_retainful' => (self::$woocommerce->getOrderMeta($order, '_rnoc_recovered_by')) ? true : false,
@@ -291,7 +293,8 @@ class Order extends RestApi
             )
 
         );
-        if(!empty($cart_token)){
+
+	    if(!empty($cart_token)){
             $referrer_automation_id = self::$woocommerce->getSession($cart_token.'_referrer_automation_id');
             if(!empty($referrer_automation_id)){
                 $order_data['referrer_automation_id'] = $referrer_automation_id;
@@ -329,42 +332,6 @@ class Order extends RestApi
         return apply_filters('rnoc_get_order_language', $selected_language);
     }
 
-    /**
-     * next order coupon details
-     * @param $order
-     * @return array
-     */
-    function getNextOrderCouponDetails($order)
-    {
-        $order_id = self::$woocommerce->getOrderId($order);
-        $data = array();
-        $next_order_coupon = self::$woocommerce->getPostMeta($order_id, '_rnoc_next_order_coupon');
-        $order_coupon_obj = new OrderCoupon();
-        if (empty($next_order_coupon) && self::$settings->isNextOrderCouponEnabled()) {
-            $next_order_coupon = $order_coupon_obj->createNewCoupon($order_id, array());
-        }
-        if (!empty($next_order_coupon)) {
-            $coupon_details = $order_coupon_obj->getCouponByCouponCode($next_order_coupon);
-            if (!empty($coupon_details)) {
-                $coupon_id = $coupon_details->ID;
-                $coupon_expiry_date = get_post_meta($coupon_id, 'coupon_expired_on', true);
-                $ends_at = null;
-                if (!empty($coupon_expiry_date)) {
-                    $expiry_date = get_gmt_from_date($coupon_expiry_date);
-                    $ends_at = strtotime($expiry_date);
-                }
-                $data[] = array(
-                    'id' => $coupon_id,
-                    'code' => $next_order_coupon,
-                    'ends_at' => $ends_at,
-                    'created_at' => strtotime($coupon_details->post_date_gmt),
-                    'updated_at' => strtotime($coupon_details->post_modified_gmt),
-                    'usage_count' => 1
-                );
-            }
-        }
-        return $data;
-    }
 
     /**
      * get the subtotal from order
@@ -416,7 +383,7 @@ class Order extends RestApi
         if ($fees = self::$woocommerce->getOrderFees($order)) {
             foreach ($fees as $id => $fee) {
                 $fee_items[] = array(
-                    'title' => html_entity_decode($fee['name'] ? $fee['name'] : __('Fee', RNOC_TEXT_DOMAIN)),
+                    'title' => html_entity_decode($fee['name'] ? $fee['name'] : __('Fee', 'retainful-next-order-coupon-for-woocommerce')),
                     'key' => $id,
                     'amount' => $this->formatDecimalPrice(($excluding_tax) ? $fee['line_total'] : $fee['line_total'] + $fee['line_tax'])
                 );

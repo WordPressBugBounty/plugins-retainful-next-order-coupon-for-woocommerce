@@ -33,8 +33,6 @@ class Main {
 		add_action( 'woocommerce_init', array( $this, 'includePluginFiles' ) );
 		//add_action('woocommerce_init',array($this->admin,'createWebhook'));
 		add_action( 'woocommerce_init', array( $this->admin, 'setIdentityData' ) );
-		//init the retainful premium
-		new \Rnoc\Retainful\Premium\RetainfulPremiumMain();
 	}
 
 	/**
@@ -212,8 +210,6 @@ class Main {
 			add_action( 'wp_ajax_rnoc_disconnect_license', array( $this->admin, 'disconnectLicense' ) );
 			add_action( 'wp_ajax_rnoc_save_settings', array( $this->admin, 'saveAcSettings' ) );
 			//add_filter('wp_ajax_rnoc_create_order_update_webhook',array($this->admin,'saveNewWebhook'),10);
-			add_action( 'wp_ajax_rnoc_save_noc_settings', array( $this->admin, 'saveNocSettings' ) );
-			add_action( 'wp_ajax_rnoc_save_premium_addon_settings', array( $this->admin, 'savePremiumAddOnSettings' ) );
 			add_action( 'wp_ajax_rnoc_delete_expired_coupons', array( $this->admin, 'deleteUnusedExpiredCoupons' ) );
 			//Settings link
 			add_filter( 'plugin_action_links_' . RNOC_BASE_FILE, array( $this->rnoc, 'pluginActionLinks' ) );
@@ -223,65 +219,7 @@ class Main {
 		}
 		//initialise currency helper
 		new Currency();
-		$can_hide_next_order_coupon = get_option( 'retainful_hide_next_order_coupon', 'no' );
-		$show_deprecate_message     = isset( $_REQUEST['page'] ) && in_array( $_REQUEST['page'], array(
-				'retainful_license',
-				'retainful_settings',
-				'retainful',
-				'retainful_premium'
-			) );
-		if ( is_admin() && $show_deprecate_message && $this->admin->isNextOrderCouponEnabled() && $can_hide_next_order_coupon == 'no' ) {
-			$notice = '<p>' . __( "The Next Order Coupon feature inside the plugin and its tab/menu will soon be removed from the Retainful plugin. Migrate your Next Order Coupon campaign to the Automations now. A detailed guide <a href='https://help.retainful.com/migration#next-order-coupon' target='_blank'>here</a>", RNOC_TEXT_DOMAIN ) . '</p>';
-			$this->showAdminNotice( $notice );
-		}
-		if ( $this->admin->isNextOrderCouponEnabled() ) {
-			//Get events
-			add_action( 'woocommerce_checkout_update_order_meta', array( $this->rnoc, 'createNewCoupon' ), 10, 2 );
-			add_action( 'woocommerce_order_status_changed', array( $this->rnoc, 'onAfterPayment' ), 10, 1 );
-			add_action( 'woocommerce_get_shop_coupon_data', array( $this->rnoc, 'addVirtualCoupon' ), 10, 2 );
-			add_action( 'rnoc_create_new_next_order_coupon', array( $this->rnoc, 'createNewCoupon' ), 10, 2 );
-			add_action( 'rnoc_initiated', array( $this->rnoc, 'setCouponToSession' ) );
-			add_action( 'wp_loaded', array( $this->rnoc, 'addCouponToCheckout' ), 10 );
-			//Attach coupon to email
-			$hook = $this->admin->couponMessageHook();
-			if ( ! empty( $hook ) && $hook != "none" ) {
-				add_action( $hook, array( $this->rnoc, 'attachOrderCoupon' ), 10, 4 );
-			}
-			//add action for filter
-			add_action( 'rnoc_show_order_coupon', array( $this->rnoc, 'attachOrderCoupon' ), 10, 4 );
-			//Sync the coupon details with retainful
-			add_action( 'retainful_cron_sync_coupon_details', array( $this->rnoc, 'cronSendCouponDetails' ), 1 );
-			//Remove coupon code after placing order
-			add_action( 'woocommerce_thankyou', array( $this->rnoc, 'removeCouponFromSession' ), 10, 1 );
-			// Show coupon in order thankyou page
-			add_action( 'woocommerce_thankyou', array( $this->rnoc, 'showCouponInThankYouPage' ), 10, 1 );
-			//Remove Code from session
-			add_action( 'woocommerce_removed_coupon', array( $this->rnoc, 'removeCouponFromCart' ) );
-			/*
-			 * Support for woocommerce email customizer
-			 */
-			add_filter( 'woo_email_drag_and_drop_builder_retainful_settings_url', array(
-				$this->rnoc,
-				'wooEmailCustomizerRetainfulSettingsUrl'
-			) );
-			//Tell Email customizes about handling coupons..
-			add_filter( 'woo_email_drag_and_drop_builder_handling_retainful', '__return_true' );
-			//set coupon details for Email customizer
-			add_filter( 'woo_email_drag_and_drop_builder_retainful_next_order_coupon_data', array(
-				$this->rnoc,
-				'wooEmailCustomizerRetainfulCouponContent'
-			), 10, 3 );
-			//sent retainful additional short codes
-			add_filter( 'woo_email_drag_and_drop_builder_load_additional_shortcode', array(
-				$this->rnoc,
-				'wooEmailCustomizerRegisterRetainfulShortCodes'
-			), 10 );
-			add_filter( 'woo_email_drag_and_drop_builder_load_additional_shortcode_data', array(
-				$this->rnoc,
-				'wooEmailCustomizerRetainfulShortCodesValues'
-			), 10, 3 );
-			add_filter( 'wp_footer', array( $this->rnoc, 'showAppliedCouponPopup' ) );
-		}
+
 		/**
 		 * Ip filtering
 		 */
@@ -298,9 +236,7 @@ class Main {
 			$app_id = $this->admin->getApiKey();*/
 			if ( $is_app_connected && ! empty( $secret_key ) && ! empty( $app_id ) ) {
 				add_action( 'rest_api_init', array( $this, 'registerSyncEndPoints' ) );
-				if ( is_admin() ) {
-					add_action( 'wp_after_admin_bar_render', array( $this->admin, 'schedulePlanChecker' ) );
-				}
+
 				/*
 				* Retainful abandoned cart api
 				*/
@@ -418,24 +354,19 @@ class Main {
 
 			} else {
 				if ( is_admin() ) {
-					$connect_txt = ( ! empty( $secret_key ) && ! empty( $app_id ) ) ? __( 'connect', RNOC_TEXT_DOMAIN ) : __( 're-connect', RNOC_TEXT_DOMAIN );
-					$notice      = '<p>' . sprintf( __( "Please <a href='" . admin_url( 'admin.php?page=retainful_license' ) . "'>%s</a> with Retainful to track and manage abandoned carts. ", RNOC_TEXT_DOMAIN ), $connect_txt ) . '</p>';
+					$connect_txt = ( ! empty( $secret_key ) && ! empty( $app_id ) ) ? __( 'connect', 'retainful-next-order-coupon-for-woocommerce' ) : __( 're-connect', 'retainful-next-order-coupon-for-woocommerce' );
+					/* translators: %s: get connection url */
+					$notice      = sprintf(__('Please with Retainful to track and manage abandoned carts. %s' ,'retainful-next-order-coupon-for-woocommerce'),"<a href='".esc_url(admin_url( 'admin.php?page=retainful_license' ))."'>$connect_txt</a>");
 					$this->showAdminNotice( $notice );
 				}
 			}
 		} else {
 			//remove
 		}
+
 		//Premium check
-		add_action( 'rnocp_check_user_plan', array( $this, 'checkUserPlan' ) );
 		do_action( 'rnoc_initiated' );
-		if ( is_admin() ) {
-			$is_retainful_v2_0_1_migration_completed = get_option( 'is_retainful_v2_0_1_migration_completed', 0 );
-			if ( ! $is_retainful_v2_0_1_migration_completed ) {
-				$this->migrationV201();
-			}
-			$this->checkApi();
-		}
+
 	}
 
 	function canActivateIPFilter() {
@@ -449,17 +380,6 @@ class Main {
 		}
 	}
 
-	/**
-	 * Migration for 2.1.0
-	 */
-	function migrationV201() {
-		$premium_settings                                              = get_option( $this->admin->slug . '_premium' );
-		$admin_settings                                                = $this->admin->getAdminSettings();
-		$admin_settings[ RNOC_PLUGIN_PREFIX . 'enable_ip_filter' ]     = isset( $premium_settings[ RNOC_PLUGIN_PREFIX . 'enable_ip_filter' ] ) ? $premium_settings[ RNOC_PLUGIN_PREFIX . 'enable_ip_filter' ] : 0;
-		$admin_settings[ RNOC_PLUGIN_PREFIX . 'ignored_ip_addresses' ] = isset( $premium_settings[ RNOC_PLUGIN_PREFIX . 'ignored_ip_addresses' ] ) ? $premium_settings[ RNOC_PLUGIN_PREFIX . 'ignored_ip_addresses' ] : '';
-		update_option( $this->admin->slug . '_settings', $admin_settings );
-		update_option( 'is_retainful_v2_0_1_migration_completed', 1 );
-	}
 
 	/**
 	 * Run when our plugin get deactivated
@@ -475,64 +395,8 @@ class Main {
 	 */
 	function removeAllScheduledActions() {
 		$this->admin->removeFinishedHooks( 'rnoc_abandoned_clear_abandoned_carts' );
-		$this->admin->removeFinishedHooks( 'rnoc_abandoned_cart_send_email' );
-		$this->admin->removeFinishedHooks( 'rnocp_check_user_plan' );
 	}
 
-	/**
-	 * check api is valid or not on 3 days once
-	 */
-	function checkApi() {
-		$last_checked = get_option( 'rnoc_last_plan_checked', null );
-		if ( empty( $last_checked ) || ( current_time( 'timestamp' ) > intval( $last_checked ) + 259200 ) ) {
-			$this->checkUserPlan();
-		}
-	}
-
-	/**
-	 * Check and update the user plan
-	 */
-	function checkUserPlan() {
-		$api_key    = $this->admin->getApiKey();
-		$secret_key = $this->admin->getSecretKey();
-		if ( ! empty( $api_key ) && ! empty( $secret_key ) ) {
-			$api_obj    = new RestApi();
-			$store_data = array(
-				'secret_key' => $api_obj->encryptData( $api_key, $secret_key )
-			);
-			$this->admin->isApiEnabled( $api_key, $secret_key, $store_data );
-		} else {
-			$this->admin->updateUserAsFreeUser();
-		}
-		$this->admin->removeFinishedHooks( 'rnocp_check_user_plan', 'publish' );
-	}
-
-	/**
-	 * Insert default email template
-	 *
-	 * @param $table
-	 */
-	function insertDefaultEmailTemplate( $table ) {
-		ob_start();
-		include( RNOC_PLUGIN_PATH . 'src/admin/templates/default-1.html' );
-		$content    = ob_get_clean();
-		$email_body = addslashes( $content );
-		ob_start();
-		include( RNOC_PLUGIN_PATH . 'src/admin/templates/default-2.html' );
-		$content1    = ob_get_clean();
-		$email_body1 = addslashes( $content1 );
-		ob_start();
-		include( RNOC_PLUGIN_PATH . 'src/admin/templates/default-3.html' );
-		$content2    = ob_get_clean();
-		$email_body2 = addslashes( $content2 );
-		global $wpdb;
-		$default_template = $wpdb->get_row( 'SELECT id FROM ' . $table . ' WHERE default_template = "1"' );
-		if ( empty( $default_template ) ) {
-			$template_subject = "Hey {{customer_name}}!! You left something in your cart";
-			$query            = 'INSERT INTO `' . $table . '` ( subject, body, is_active, frequency, day_or_hour, default_template,template_name )VALUES ( "' . $template_subject . '","' . $email_body . '","1","1","Hours","1","initial"),( "' . $template_subject . '","' . $email_body1 . '","0","1","Hours","6","After 6 hours"),( "' . $template_subject . '","' . $email_body2 . '","0","1","Days","1","After 1 day")';
-			$wpdb->query( $query );
-		}
-	}
 
 	/**
 	 * Initiate the plugin
@@ -542,19 +406,7 @@ class Main {
 		return self::$init = ( self::$init == null ) ? new self() : self::$init;
 	}
 
-	function removeDependentTables() {
-	}
 
-	/**
-	 * All tables required for retainful abandoned cart
-	 * @return array
-	 */
-	function getAbandonedCartTables() {
-		return array(
-			RNOC_PLUGIN_PREFIX . 'abandoned_cart_history',
-			RNOC_PLUGIN_PREFIX . 'guest_abandoned_cart_history'
-		);
-	}
 
 	/**
 	 * detect woocommerce have been deactivated
@@ -574,45 +426,15 @@ class Main {
 	 */
 	function checkDependencies() {
 		if ( ! defined( 'WC_VERSION' ) ) {
-			$this->showAdminNotice( __( 'Woocommerce must be activated for Retainful-Woocommerce to work', RNOC_TEXT_DOMAIN ) );
+			$this->showAdminNotice( __( 'Woocommerce must be activated for Retainful-Woocommerce to work', 'retainful-next-order-coupon-for-woocommerce' ) );
 		} else {
 			if ( version_compare( WC_VERSION, '2.5', '<' ) ) {
-				$this->showAdminNotice( __( 'Your woocommerce version is ', RNOC_TEXT_DOMAIN ) . WC_VERSION . __( '. Some of the features of Retainful-Woocommerce will not work properly on this woocommerce version.', RNOC_TEXT_DOMAIN ) );
+				$this->showAdminNotice( __( 'Your woocommerce version is ', 'retainful-next-order-coupon-for-woocommerce' ) . WC_VERSION . __( '. Some of the features of Retainful-Woocommerce will not work properly on this woocommerce version.', 'retainful-next-order-coupon-for-woocommerce' ) );
 			}
-		}
-		if ( is_admin() ) {
-			$this->doMigration();
 		}
 	}
 
-	/**
-	 * Migrate data required for v 1.1.3
-	 */
-	function doMigration() {
-		$is_migrated = get_option( 'retainful_v_1_1_3_migration_completed', 0 );
-		if ( ! $is_migrated ) {
-			$slug                   = $this->admin->slug;
-			$retainful_page         = get_option( $slug, array() );
-			$licence_page           = get_option( $slug . '_license', array() );
-			$usage_restriction_page = get_option( $slug . '_usage_restriction', array() );
-			if ( empty( $licence_page ) ) {
-				$licence_data = array(
-					RNOC_PLUGIN_PREFIX . 'is_retainful_connected' => ( isset( $retainful_page[ RNOC_PLUGIN_PREFIX . 'is_retainful_connected' ] ) ) ? $retainful_page[ RNOC_PLUGIN_PREFIX . 'is_retainful_connected' ] : 0,
-					RNOC_PLUGIN_PREFIX . 'retainful_app_id'       => ( isset( $retainful_page[ RNOC_PLUGIN_PREFIX . 'retainful_app_id' ] ) ) ? $retainful_page[ RNOC_PLUGIN_PREFIX . 'retainful_app_id' ] : '',
-					RNOC_PLUGIN_PREFIX . 'retainful_app_secret'   => ( isset( $retainful_page[ RNOC_PLUGIN_PREFIX . 'retainful_app_secret' ] ) ) ? $retainful_page[ RNOC_PLUGIN_PREFIX . 'retainful_app_secret' ] : ''
-				);
-				update_option( $slug . '_license', $licence_data );
-			}
-			unset( $retainful_page[ RNOC_PLUGIN_PREFIX . 'is_retainful_connected' ], $retainful_page[ RNOC_PLUGIN_PREFIX . 'retainful_app_id' ] );
-			$retainful_data = array_merge( $retainful_page, $usage_restriction_page );
-			update_option( $slug, $retainful_data );
-			delete_option( $slug . '_usage_restriction' );
-			$abandoned_cart_data = get_option( $slug . '_abandoned_cart_settings', array() );
-			update_option( $slug . '_settings', $abandoned_cart_data );
-			delete_option( $slug . '_abandoned_cart_settings' );
-			update_option( 'retainful_v_1_1_3_migration_completed', 1 );
-		}
-	}
+
 
 	/**
 	 * Show notices for user..if anything unusually happen in our plugin
@@ -622,7 +444,7 @@ class Main {
 	function showAdminNotice( $message = "" ) {
 		if ( ! empty( $message ) ) {
 			add_action( 'admin_notices', function () use ( $message ) {
-				echo '<div class="error notice"><p>' . $message . '</p></div>';
+				echo wp_kses_post('<div class="error notice"><p>' . wp_kses_post($message) . '</p></div>');
 			} );
 		}
 	}

@@ -3,6 +3,7 @@
 namespace Rnoc\Retainful\Api\AbandonedCart;
 
 use Exception;
+use Rnoc\Retainful\Api\Imports\Imports;
 use Rnoc\Retainful\Integrations\MultiLingual;
 use Jaybizzle\CrawlerDetect\CrawlerDetect;
 use stdClass;
@@ -71,13 +72,26 @@ class Cart extends RestApi
         $enable_gdpr_compliance = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_gdpr_compliance'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_gdpr_compliance'] : 0;
         $message = isset($settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg']) ? $settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg'] : 'Keep me up to date on news and exclusive offers';
         $field_name = isset($settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position']) ? $settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position'] : 'after_billing_email';
-        if ($enable_gdpr_compliance && $field_name == 'after_billing_email' && $message && isset($fields['billing']['billing_email'])) {
-            $fields['billing'][RNOC_PLUGIN_PREFIX.'allow_gdpr'] = [
-                'label' => __($message,'retainful-next-order-coupon-for-woocommerce'), //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
-                'type' => 'checkbox',
-                'priority' => $fields['billing']['billing_email']['priority'],
-                'default' => (int)$this->isBuyerAcceptsMarketing()
-            ];
+	   //sms consent settings
+	    $enable_sms_compliance = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'] : 0;
+	    $sms_message = isset($settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg']) ? $settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg'] : 'Keep me up to date on news and exclusive offers';
+	    $sms_field_name = isset($settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position']) ? $settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position'] : 'after_billing_email';
+
+	    if ($enable_gdpr_compliance && $field_name == 'after_billing_email' && $message && isset($fields['billing']['billing_email'])) {
+		    $fields['billing'][ RNOC_PLUGIN_PREFIX . 'allow_gdpr' ] = [
+			    'label'    => __( $message, 'retainful-next-order-coupon-for-woocommerce' ),  //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+			    'type'     => 'checkbox',
+			    'priority' => $fields['billing']['billing_email']['priority'],
+			    'default'  => (int) $this->isBuyerAcceptsMarketing()
+		    ];
+	    }
+        if ($enable_sms_compliance && $sms_field_name == 'after_billing_email' && $sms_message && isset($fields['billing']['billing_email'])) {
+	        $fields['billing'][RNOC_PLUGIN_PREFIX.'sms_consent'] = [
+		        'label' => __($sms_message,'retainful-next-order-coupon-for-woocommerce'),  //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+		        'type' => 'checkbox',
+		        'priority' => $fields['billing']['billing_email']['priority'],
+		        'default' => (int) $this->isSmsConsent()
+	        ];
         }
         return $fields;
     }
@@ -88,11 +102,22 @@ class Cart extends RestApi
         $enable_gdpr_compliance = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_gdpr_compliance'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_gdpr_compliance'] : 0;
         $field_name = isset($settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position']) ? $settings[RNOC_PLUGIN_PREFIX . 'gdpr_display_position'] : 'after_billing_email';
         $message = isset($settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg']) ? $settings[RNOC_PLUGIN_PREFIX . 'cart_capture_msg'] : 'Keep me up to date on news and exclusive offers';
-        if($enable_gdpr_compliance && $field_name == 'after_term_and_condition' && $message){
+	    //sms consent settings
+	    $enable_sms_compliance = (isset($settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'])) ? $settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'] : 0;
+	    $sms_message = isset($settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg']) ? $settings[RNOC_PLUGIN_PREFIX . 'sms_capture_msg'] : 'Keep me up to date on news and exclusive offers';
+	    $sms_field_name = isset($settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position']) && !empty($settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position']) ? $settings[RNOC_PLUGIN_PREFIX . 'sms_consent_display_position'] : 'after_billing_email';
+
+
+	    if($enable_gdpr_compliance && $field_name == 'after_term_and_condition' && $message){
             echo '<input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" 
             name="'.esc_attr(RNOC_PLUGIN_PREFIX.'allow_gdpr').'" id="'.esc_attr(RNOC_PLUGIN_PREFIX.'allow_gdpr').'" '.($this->isBuyerAcceptsMarketing() ? 'checked="checked"' : '').' />
-					<span class="woocommerce-terms-and-conditions-checkbox-text">' .  esc_html__($message,'retainful-next-order-coupon-for-woocommerce') .' '. esc_html__('(optional)','retainful-next-order-coupon-for-woocommerce').'</span>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+					<span class="woocommerce-terms-and-conditions-checkbox-text">' .  esc_html__($message,'retainful-next-order-coupon-for-woocommerce') .' '. esc_html__('(optional)','retainful-next-order-coupon-for-woocommerce').'</span><br>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
         }
+	    if($enable_sms_compliance && $sms_field_name == 'after_term_and_condition' && $sms_message){
+		    echo '<input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" 
+            name="'.esc_attr(RNOC_PLUGIN_PREFIX.'sms_consent').'" id="'.esc_attr(RNOC_PLUGIN_PREFIX.'sms_consent').'" '.($this->isSmsConsent() ? 'checked="checked"' : '').' />
+					<span class="woocommerce-terms-and-conditions-checkbox-text">' .  esc_html__($sms_message,'retainful-next-order-coupon-for-woocommerce') .' '. esc_html__('(optional)','retainful-next-order-coupon-for-woocommerce').'</span><br>'; //phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText
+	    }
     }
 
     /**
@@ -113,8 +138,16 @@ class Cart extends RestApi
      */
     function setCustomerData()
     {
+
 	    $billing_email = !empty($_POST['billing_email']) ? sanitize_email(wp_unslash($_POST['billing_email'])) : ''; //phpcs:ignore WordPress.Security.NonceVerification.Missing
 	    if ($billing_email) {
+		    // Validate email format
+		    if (!is_email($billing_email)) {
+			    wp_send_json_error([
+				    'success' => false,
+				    'message' => __('Invalid email format', 'retainful-next-order-coupon-for-woocommerce')
+			    ]);
+		    }
             $billing_address = array();
             $shipping_address = array();
             //billing address fields
@@ -131,6 +164,11 @@ class Cart extends RestApi
                 $is_buyer_accepting_marketing = (isset($_POST['allow_gdpr']) && $_POST['allow_gdpr'] == 'true');  //phpcs:ignore WordPress.Security.NonceVerification.Missing
             }
             self::$woocommerce->setSession('is_buyer_accepting_marketing', $is_buyer_accepting_marketing);
+	        $is_sms_consent = true;
+	        if(isset($settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent']) && $settings[RNOC_PLUGIN_PREFIX . 'enable_sms_consent'] ){
+		        $is_sms_consent = (isset($_POST['sms_consent']) && $_POST['sms_consent'] == 'true');  //phpcs:ignore WordPress.Security.NonceVerification.Missing
+	        }
+	        self::$woocommerce->setSession('is_buyer_accepting_sms_marketing', $is_sms_consent);
             $this->setCustomerBillingDetails($billing_address);
             // $order_notes = (isset($_POST['order_notes'])) ? sanitize_text_field($_POST['order_notes']) : '';
             //shipping address fields
@@ -222,7 +260,7 @@ class Cart extends RestApi
                 'api_url' => self::$api->getAbandonedCartEndPoint(),
                 'billing_email' => !empty( self::$woocommerce->getCustomerEmail()) ?self::$woocommerce->getCustomerEmail() : '',
                 'tracking_element_selector' => $this->getTrackingElementId(),
-                'cart_tracking_engine' => self::$settings->getCartTrackingEngine()
+                'cart_tracking_engine' => self::$settings->getCartTrackingEngine(),
             ];
             $data = apply_filters('rnoc_add_cart_tracking_scripts', $data);
 	        wp_localize_script(RNOC_PLUGIN_PREFIX . 'track-user-cart', 'retainful_cart_data', $data);
@@ -656,6 +694,7 @@ class Cart extends RestApi
             'abandoned_checkout_url' => $this->getRecoveryLink($cart_token),
             'total_line_items_price' => $this->formatDecimalPrice(self::$woocommerce->getCartTotal()),
             'buyer_accepts_marketing' => $this->isBuyerAcceptsMarketing(),
+            'buyer_accepts_sms_marketing' => $this->isSmsConsent(),
             'client_session' => self::$woocommerce->getClientSession(),
             'woocommerce_totals' => $this->getCartTotals(),
             'recovered_at' => (!empty($recovered_at)) ? $this->formatToIso8601($recovered_at) : NULL,
@@ -1161,7 +1200,12 @@ class Cart extends RestApi
             return NULL;
         }
         global $wpdb;
-        return $wpdb->get_var($wpdb->prepare("SELECT post_id	FROM {$wpdb->postmeta}	WHERE meta_key = '{$this->cart_token_key_for_db}'	AND meta_value = %s	", $cart_token)); //phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+	    if(Imports::isHPOSEnabled()) {
+		    $data = $wpdb->get_var($wpdb->prepare("SELECT order_id FROM {$wpdb->prefix}wc_orders_meta WHERE meta_key = '{$this->cart_token_key_for_db}' AND meta_value = %s", $cart_token));//phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+	    }else{
+		    $data = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->prefix}posts WHERE meta_key = '{$this->cart_token_key_for_db}' AND meta_value = %s", $cart_token));//phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+	    }
+        return $data;
     }
 
     /**

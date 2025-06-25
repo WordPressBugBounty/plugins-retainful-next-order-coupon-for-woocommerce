@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 use Rnoc\Retainful\Api\AbandonedCart\Order;
 use Rnoc\Retainful\Api\AbandonedCart\RestApi;
+use Valitron\Validator;
 
 class Products extends Order {
 	/**
@@ -53,17 +54,8 @@ class Products extends Order {
 		}
 		$limit = ! empty( $params['limit'] ) ? $params['limit'] : 10;
 		$since_id = ! empty( $params['since_id'] ) ? $params['since_id'] : 10;
-
 		global $wpdb;
-		$query = $wpdb->prepare( "SELECT {$wpdb->prefix}posts.ID FROM {$wpdb->prefix}posts WHERE post_type IN ('product') AND ID > %d AND post_status NOT IN (%s, %s, %s) ORDER BY ID ASC LIMIT %d", array(
-			$since_id,
-			'trash',
-			'auto-draft',
-			'draft',
-			(int) $limit
-		) );
-
-		return $wpdb->get_results( $query );
+		return $wpdb->get_results( $wpdb->prepare( "SELECT {$wpdb->prefix}posts.ID FROM {$wpdb->prefix}posts WHERE post_type IN ('product') AND ID > %d AND post_status NOT IN (%s, %s, %s) ORDER BY ID ASC LIMIT %d", array($since_id, 'trash', 'auto-draft', 'draft', (int) $limit ) ) ); //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 
 	}
 
@@ -74,14 +66,7 @@ class Products extends Order {
 	 */
 	protected function getProductCount() {
 		global $wpdb;
-		$query = $wpdb->prepare( "SELECT COUNT(DISTINCT {$wpdb->prefix}posts.ID) FROM {$wpdb->prefix}posts WHERE post_type IN ('product') AND ID > %d AND post_status NOT IN (%s, %s, %s)", array(
-			0,
-			'trash',
-			'auto-draft',
-			'draft'
-		) );
-
-		return $wpdb->get_var( $query );
+		return $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(DISTINCT {$wpdb->prefix}posts.ID) FROM {$wpdb->prefix}posts WHERE post_type IN ('product') AND ID > %d AND post_status NOT IN (%s, %s, %s)", array( 0, 'trash', 'auto-draft', 'draft' ) ) ); //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
@@ -101,6 +86,27 @@ class Products extends Order {
 			'digest' => ''
 		);
 		$params  = wp_parse_args( $request_params, $default_request_params );
+		$validator = new Validator($params);
+		$validator->rule('required', ['limit', 'status', 'digest'])->message('{field} is required');
+		$validator->rule('integer', ['limit', 'since_id'])->message('This {field} contains invalid value');
+		$validator->rule('min', 'limit', 1)->message('Limit must be at least 1');
+		$validator->rule('max', 'limit', 1000)->message('Limit must not exceed 1000');
+		// Run validation
+		if (!$validator->validate()) {
+			$error_message = [];
+			foreach ($validator->errors() as $field => $messages) {
+				foreach ($messages as $msg) {
+					$error_message[] = $msg;
+				}
+			}
+			$status   = 400;
+			$response = array(
+				'success'       => false,
+				'RESPONSE_CODE' => 'SECURITY_BREACH',
+				'message'       => implode(' ,', $error_message),
+			);
+			return new \WP_REST_Response( $response, $status );
+		}
 		self::$settings->logMessage( $params, 'API Product get request' );
 		if ( is_array( $params['limit'] ) || empty( $params['digest'] ) || ! is_string( $params['digest'] ) || empty( $params['limit'] ) || $params['since_id'] < 0 || $params['status'] != 'any' ) {
 			self::$settings->logMessage( $params, 'API Product data missing' );
@@ -354,8 +360,8 @@ class Products extends Order {
 			'ProductCreatedAt'       => $this->formatToIso8601( self::$woocommerce->isMethodExists( $product, 'get_date_created' ) ? strtotime( $product->get_date_created() ) : strtotime( '0000-00-00T00:00:00+00:00' ) ),
 			'ProductUpdatedAt'       => $this->formatToIso8601( self::$woocommerce->isMethodExists( $product, 'get_date_modified' ) ? strtotime( $product->get_date_modified() ) : strtotime( '0000-00-00T00:00:00+00:00' ) ),
 			'ProductPublishedAt'     => $this->formatToIso8601( self::$woocommerce->isMethodExists( $product, 'get_date_created' ) ? strtotime( $product->get_date_created() ) : strtotime( '0000-00-00T00:00:00+00:00' ) ),
-			'CreatedAt'              => $this->formatToIso8601(strtotime(date('Y-m-d H:i:s'))),
-			'UpdatedAt'              => $this->formatToIso8601(strtotime(date('Y-m-d H:i:s'))),
+			'CreatedAt'              => $this->formatToIso8601(strtotime(gmdate('Y-m-d H:i:s'))),
+			'UpdatedAt'              => $this->formatToIso8601(strtotime(gmdate('Y-m-d H:i:s'))),
 			'DeletedAt'              => null,
 			'ProductStockQuantity'   => self::$woocommerce->isMethodExists( $product, 'get_stock_quantity' ) ? (!empty($product->get_stock_quantity()) ? $product->get_stock_quantity() : 0 ) : 0,
 			'Vendor'                 => '', // need to check

@@ -3,6 +3,7 @@
 namespace Rnoc\Retainful\Api\Imports;
 
 use Rnoc\Retainful\Api\AbandonedCart\Order;
+use Valitron\Validator;
 
 class Imports extends Order {
 	/**
@@ -55,7 +56,7 @@ class Imports extends Order {
 			) );
 		}
 
-		return $wpdb->get_col( $query );
+		return $wpdb->get_col( $query ); //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -80,7 +81,7 @@ class Imports extends Order {
 			) );
 		}
 
-		return $wpdb->get_var( $query );
+		return $wpdb->get_var( $query ); //phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -98,7 +99,28 @@ class Imports extends Order {
 			'status'   => 'any',
 			'digest'   => ''
 		);
-		$params                 = wp_parse_args( $request_params, $default_request_params );
+		$params  = wp_parse_args( $request_params, $default_request_params );
+		$validator = new Validator($params);
+		$validator->rule('required', ['limit', 'status', 'digest'])->message('{field} is required');
+		$validator->rule('integer', ['limit', 'since_id'])->message('This {field} contains invalid value');
+		$validator->rule('min', 'limit', 1)->message('Limit must be at least 1');
+		$validator->rule('max', 'limit', 1000)->message('Limit must not exceed 1000');
+		// Run validation
+		if (!$validator->validate()) {
+			$error_message = [];
+			foreach ($validator->errors() as $field => $messages) {
+				foreach ($messages as $msg) {
+					$error_message[] = $msg;
+				}
+			}
+			$status   = 400;
+			$response = array(
+				'success'       => false,
+				'RESPONSE_CODE' => 'SECURITY_BREACH',
+				'message'       => implode(' ,', $error_message),
+			);
+			return new \WP_REST_Response( $response, $status );
+		}
 		self::$settings->logMessage( $params, 'API Orders get request' );
 		if ( is_array( $params['limit'] ) || empty( $params['digest'] ) || ! is_string( $params['digest'] ) || empty( $params['limit'] ) || $params['since_id'] < 0 || $params['status'] != 'any' ) {
 			self::$settings->logMessage( $params, 'API Orders data missing' );
@@ -300,6 +322,7 @@ class Imports extends Order {
 			'abandoned_checkout_url'    => $this->getRecoveryLink( $cart_token ),
 			'total_line_items_price'    => $this->formatDecimalPrice( $this->getOrderItemsTotal( $order ) ),
 			'buyer_accepts_marketing'   => true,
+			'buyer_accepts_sms_marketing' => true,
 			'cancelled_at'              => self::$woocommerce->getOrderMeta( $order, $this->order_cancelled_date_key_for_db ),
 			'woocommerce_totals'        => $this->getOrderTotals( $order, $excluding_tax ),
 			'recovered_by_retainful'    => (bool) self::$woocommerce->getOrderMeta( $order, '_rnoc_recovered_by' ),

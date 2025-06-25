@@ -1,6 +1,7 @@
 <?php
 
 namespace Rnoc\Retainful;
+
 if (!defined('ABSPATH')) exit;
 
 class WcFunctions
@@ -845,7 +846,7 @@ class WcFunctions
             return NULL;
         $this->startPHPSession();
         if (isset($_SESSION[$key])) {
-            return $_SESSION[$key];
+            return $_SESSION[$key];//phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         }
         return NULL;
     }
@@ -1980,7 +1981,7 @@ class WcFunctions
                 $query = $wpdb->prepare("SELECT COUNT(*) as total FROM {$wpdb->prefix}wc_orders 
                          WHERE billing_email = %s", array($email));
             }
-            $count = $wpdb->get_var($query);
+            $count = $wpdb->get_var($query); //phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
             /*$customer_orders = $this->getCustomerOrdersByEmail($email);
             if (is_array($customer_orders)) {
                 return count($customer_orders);
@@ -2044,7 +2045,7 @@ class WcFunctions
             } else {
                 $query = $wpdb->prepare("SELECT SUM(total_amount) as total FROM {$wpdb->prefix}wc_orders WHERE billing_email = %s", array($email));
             }
-            $sum = $wpdb->get_var($query);
+            $sum = $wpdb->get_var($query); //phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
             /*$customer_orders = $this->getCustomerOrdersByEmail($email);
             if (is_array($customer_orders)) {
                 foreach ($customer_orders as $order) {
@@ -2108,7 +2109,7 @@ class WcFunctions
 
     public static function checkSecuritykey($security_name)
     {
-        $message = __('Security check failed', RNOC_TEXT_DOMAIN);
+        $message = __('Security check failed', 'retainful-next-order-coupon-for-woocommerce');
         if (empty($security_name)) wp_send_json_error($message);
         check_ajax_referer($security_name, 'security');
         if (!current_user_can('manage_woocommerce')) {
@@ -2129,5 +2130,7 @@ class WcFunctions
         }
         return apply_filters('rnoc_custom_default_currency', $currency);
     }
+
+
 
 }
