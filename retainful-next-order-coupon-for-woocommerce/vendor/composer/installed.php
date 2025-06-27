@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '7591559586c26d8d17d5fd72f22696425dfa56f2',
+        'reference' => 'c360b0b68c0ccd494e4ffc91834d4d1b52af8826',
         'name' => 'retainful/woocommerce',
         'dev' => false,
     ),
@@ -25,7 +25,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '7591559586c26d8d17d5fd72f22696425dfa56f2',
+            'reference' => 'c360b0b68c0ccd494e4ffc91834d4d1b52af8826',
             'dev_requirement' => false,
         ),
         'vlucas/valitron' => array(

@@ -809,39 +809,17 @@ class Settings
      */
     function logMessage($message, $log_in_as = "checkout")
     {
+		return;
 	    $admin_settings = $this->getAdminSettings();
 
 	    if ( isset($admin_settings[RNOC_PLUGIN_PREFIX . 'enable_debug_log']) && !empty($admin_settings[RNOC_PLUGIN_PREFIX . 'enable_debug_log']) && !empty($message) ) {
-		    try {
-			    if (is_array($message) || is_object($message)) {
-				    $message = json_encode($message);
-			    }
-
-			    $to_print = $log_in_as . ":\n" . $message;
-			    $content = "\n\n Time :" . current_time('mysql', true) . ' | ' . $to_print;
-
-			    if ( ! function_exists( 'request_filesystem_credentials' ) ) {
-				    require_once ABSPATH . 'wp-admin/includes/file.php';
-			    }
-
-			    global $wp_filesystem;
-			    WP_Filesystem();
-
-			    $existing_content = '';
-			    if ( $wp_filesystem->exists(RNOC_LOG_FILE_PATH) ) {
-				    $existing_content = $wp_filesystem->get_contents(RNOC_LOG_FILE_PATH);
-			    }
-
-			    $wp_filesystem->put_contents(
-				    RNOC_LOG_FILE_PATH,
-				    $existing_content . $content,
-				    FS_CHMOD_FILE
-			    );
-
-		    } catch (\Exception $e) {
-			    // Optional: log this error somewhere else or trigger a notice
-			    error_log('Log write failed: ' . $e->getMessage()); //phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		    }
+			if(function_exists('wc_get_logger')){
+				if (is_array($message) || is_object($message)) {
+					$message = json_encode($message);
+				}
+				$to_print = $log_in_as . ":\n" . $message;
+				wc_get_logger()->add('Retainful',$to_print);
+			}
 	    }
     }
 
