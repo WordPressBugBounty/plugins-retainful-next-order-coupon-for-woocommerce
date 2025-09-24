@@ -2,14 +2,14 @@
 # This file is distributed under the same license as the Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups 2.6.42\n"
+"Project-Id-Version: Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups 2.6.43\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/retainful-next-order-coupon-for-woocommerce\n"
 "Last-Translator: Retainful <support@retainful.com>\n"
 "Language-Team: Retainful <support@retainful.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-06-27T06:10:45+00:00\n"
+"POT-Creation-Date: 2025-09-24T05:57:53+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: retainful-next-order-coupon-for-woocommerce\n"
@@ -421,12 +421,12 @@ msgstr ""
 msgid "Invalid email format"
 msgstr ""
 
-#: src/Api/AbandonedCart/Cart.php:811
+#: src/Api/AbandonedCart/Cart.php:868
 msgid "Customer visited Retainful order recovery URL."
 msgstr ""
 
-#: src/Api/AbandonedCart/Cart.php:1168
-#: src/Api/AbandonedCart/Cart.php:1184
+#: src/Api/AbandonedCart/Cart.php:1225
+#: src/Api/AbandonedCart/Cart.php:1241
 msgid "Note: Auto-login disabled when recreating cart for WordPress Admin account. Checking out as guest."
 msgstr ""
 
@@ -459,28 +459,28 @@ msgstr ""
 msgid "Coupon added into the Session"
 msgstr ""
 
-#: src/Main.php:357
+#: src/Main.php:356
 msgid "connect"
 msgstr ""
 
-#: src/Main.php:357
+#: src/Main.php:356
 msgid "re-connect"
 msgstr ""
 
 #. translators: %s: get connection url
-#: src/Main.php:359
+#: src/Main.php:358
 msgid "Please with Retainful to track and manage abandoned carts. %s"
 msgstr ""
 
-#: src/Main.php:429
+#: src/Main.php:428
 msgid "Woocommerce must be activated for Retainful-Woocommerce to work"
 msgstr ""
 
-#: src/Main.php:432
+#: src/Main.php:431
 msgid "Your woocommerce version is "
 msgstr ""
 
-#: src/Main.php:432
+#: src/Main.php:431
 msgid ". Some of the features of Retainful-Woocommerce will not work properly on this woocommerce version."
 msgstr ""
 

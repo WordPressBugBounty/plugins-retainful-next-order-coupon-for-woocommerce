@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => 'dev-2.6.40-cart',
-        'version' => 'dev-2.6.40-cart',
+        'pretty_version' => '2.6.43.x-dev',
+        'version' => '2.6.43.9999999-dev',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'c360b0b68c0ccd494e4ffc91834d4d1b52af8826',
+        'reference' => 'dc1dca8151e59eacc836dfc663ea992d1045732b',
         'name' => 'retainful/woocommerce',
         'dev' => false,
     ),
@@ -20,12 +20,12 @@
             'dev_requirement' => false,
         ),
         'retainful/woocommerce' => array(
-            'pretty_version' => 'dev-2.6.40-cart',
-            'version' => 'dev-2.6.40-cart',
+            'pretty_version' => '2.6.43.x-dev',
+            'version' => '2.6.43.9999999-dev',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'c360b0b68c0ccd494e4ffc91834d4d1b52af8826',
+            'reference' => 'dc1dca8151e59eacc836dfc663ea992d1045732b',
             'dev_requirement' => false,
         ),
         'vlucas/valitron' => array(
