@@ -1,15 +1,15 @@
-# Copyright (C) 2025 Retainful
+# Copyright (C) 2026 Retainful
 # This file is distributed under the same license as the Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups 2.6.43\n"
+"Project-Id-Version: Retainful - WooCommerce Abandoned Cart Recovery, Email Campaigns, Newsletters, Signup Forms & Popups 2.6.44\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/retainful-next-order-coupon-for-woocommerce\n"
 "Last-Translator: Retainful <support@retainful.com>\n"
 "Language-Team: Retainful <support@retainful.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-24T05:57:53+00:00\n"
+"POT-Creation-Date: 2026-03-19T12:19:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.10.0\n"
 "X-Domain: retainful-next-order-coupon-for-woocommerce\n"
@@ -402,12 +402,12 @@ msgstr ""
 msgid "save"
 msgstr ""
 
-#: src/admin/templates/pages/tabs.php:9
+#: src/admin/templates/pages/tabs.php:13
 #: src/OrderCoupon.php:28
 msgid "Connection"
 msgstr ""
 
-#: src/admin/templates/pages/tabs.php:13
+#: src/admin/templates/pages/tabs.php:17
 #: src/OrderCoupon.php:33
 msgid "Settings"
 msgstr ""
@@ -472,15 +472,15 @@ msgstr ""
 msgid "Please with Retainful to track and manage abandoned carts. %s"
 msgstr ""
 
-#: src/Main.php:428
+#: src/Main.php:434
 msgid "Woocommerce must be activated for Retainful-Woocommerce to work"
 msgstr ""
 
-#: src/Main.php:431
+#: src/Main.php:437
 msgid "Your woocommerce version is "
 msgstr ""
 
-#: src/Main.php:431
+#: src/Main.php:437
 msgid ". Some of the features of Retainful-Woocommerce will not work properly on this woocommerce version."
 msgstr ""
 

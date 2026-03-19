@@ -5,18 +5,18 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'dc1dca8151e59eacc836dfc663ea992d1045732b',
+        'reference' => '76d94e21067468bdbd2c22f7e19042b3639a42cd',
         'name' => 'retainful/woocommerce',
         'dev' => false,
     ),
     'versions' => array(
         'jaybizzle/crawler-detect' => array(
-            'pretty_version' => 'v1.3.5',
-            'version' => '1.3.5.0',
+            'pretty_version' => 'v1.3.7',
+            'version' => '1.3.7.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../jaybizzle/crawler-detect',
             'aliases' => array(),
-            'reference' => 'fbf1a3e81d61b088e7af723fb3c7a4ee92ac7e34',
+            'reference' => '7f7a45b5d5df9c95ba6b2008544e6cf8e66de6f5',
             'dev_requirement' => false,
         ),
         'retainful/woocommerce' => array(
@@ -25,7 +25,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'dc1dca8151e59eacc836dfc663ea992d1045732b',
+            'reference' => '76d94e21067468bdbd2c22f7e19042b3639a42cd',
             'dev_requirement' => false,
         ),
         'vlucas/valitron' => array(
